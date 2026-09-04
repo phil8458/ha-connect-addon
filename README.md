@@ -15,11 +15,13 @@ Live-API: https://haremote.projex.ch
    https://github.com/phil8458/ha-remote-addon
    ```
 
-4. App **HA Remote** installieren
+4. App **HA Remote** installieren (lädt vorgebautes Image von GHCR – kein lokaler Build auf dem Pi)
 5. Optionen:
    - `api_base`: `https://haremote.projex.ch`
    - `pairing_code`: Code aus dem Dashboard (https://haremote.projex.ch)
 6. Starten und Logs prüfen
+
+Image: `ghcr.io/phil8458/ha-remote-addon` (amd64 / arm64 / armv7)
 
 ## Struktur
 

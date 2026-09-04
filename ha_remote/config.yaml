@@ -1,5 +1,5 @@
 name: "HA Remote"
-version: "0.1.0"
+version: "0.2.0"
 slug: ha_remote
 description: >-
   Remote-Zugang zu Home Assistant ohne Portfreigabe.
@@ -9,6 +9,8 @@ arch:
   - amd64
   - aarch64
   - armv7
+# Prebuilt multi-arch image – Pi muss nicht lokal bauen
+image: "ghcr.io/phil8458/ha-remote-addon"
 init: false
 startup: services
 boot: auto

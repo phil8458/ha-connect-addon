@@ -1,16 +1,15 @@
 FROM ghcr.io/home-assistant/base:latest
 
-ARG BUILD_ARCH=amd64
+# Set by BuildKit per platform (amd64 | arm64 | arm)
+ARG TARGETARCH
 ARG FRP_VERSION=0.61.1
 
-# Map HA arch names to frp release arch names
 RUN set -eux; \
-    case "${BUILD_ARCH}" in \
+    case "${TARGETARCH}" in \
       amd64) FRP_ARCH=amd64 ;; \
-      aarch64) FRP_ARCH=arm64 ;; \
-      armv7) FRP_ARCH=arm ;; \
-      armhf) FRP_ARCH=arm ;; \
-      *) echo "Unsupported arch: ${BUILD_ARCH}" >&2; exit 1 ;; \
+      arm64) FRP_ARCH=arm64 ;; \
+      arm) FRP_ARCH=arm ;; \
+      *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
     apk add --no-cache curl jq bash; \
     curl -fsSL \
