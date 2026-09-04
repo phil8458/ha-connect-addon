@@ -7,7 +7,7 @@ TOKEN_FILE="${DATA_DIR}/device_token"
 PAIR_FILE="${DATA_DIR}/pair.json"
 FRPC_TOML="${DATA_DIR}/frpc.toml"
 STATUS_FILE="${DATA_DIR}/status.json"
-ADDON_VERSION="0.1.0"
+ADDON_VERSION="0.2.3"
 
 log() {
   echo "[ha-remote] $*"
@@ -17,7 +17,6 @@ log_err() {
   echo "[ha-remote] ERROR: $*" >&2
 }
 
-# Mask secrets in logs
 redact() {
   sed -E \
     -e 's/("auth_token"[[:space:]]*:[[:space:]]*")[^"]+"/\1***"/g' \
@@ -30,7 +29,7 @@ read_options() {
     log_err "options.json missing at ${OPTIONS_FILE}"
     exit 1
   fi
-  API_BASE="$(jq -r '.api_base // "http://127.0.0.1:8000"' "${OPTIONS_FILE}" | sed 's:/*$::')"
+  API_BASE="$(jq -r '.api_base // "https://haremote.projex.ch"' "${OPTIONS_FILE}" | sed 's:/*$::')"
   PAIRING_CODE="$(jq -r '.pairing_code // empty' "${OPTIONS_FILE}")"
   LOCAL_HOST="$(jq -r '.local_host // "homeassistant"' "${OPTIONS_FILE}")"
   LOCAL_PORT="$(jq -r '.local_port // 8123' "${OPTIONS_FILE}")"
@@ -50,6 +49,32 @@ write_status() {
     --arg updated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     '{state:$state, message:$message, public_url:$public_url, updated:$updated}' \
     > "${STATUS_FILE}"
+}
+
+write_frpc_toml() {
+  local proxy_name="$1"
+  local subdomain="$2"
+  local server_addr="$3"
+  local server_port="$4"
+  local auth_token="$5"
+
+  cat > "${FRPC_TOML}" <<EOF
+serverAddr = "${server_addr}"
+serverPort = ${server_port}
+
+auth.method = "token"
+auth.token = "${auth_token}"
+
+[[proxies]]
+name = "${proxy_name}"
+type = "http"
+localIP = "${LOCAL_HOST}"
+localPort = ${LOCAL_PORT}
+subdomain = "${subdomain}"
+# Avoid HA 400 Bad Request without trusted_proxies in configuration.yaml
+requestHeaders.remove = ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host", "X-Real-IP", "Forwarded"]
+EOF
+  chmod 600 "${FRPC_TOML}"
 }
 
 do_pair() {
@@ -90,21 +115,7 @@ do_pair() {
   server_port="$(jq -r '.tunnel.server_port' "${tmp}")"
   auth_token="$(jq -r '.tunnel.auth_token' "${tmp}")"
 
-  cat > "${FRPC_TOML}" <<EOF
-serverAddr = "${server_addr}"
-serverPort = ${server_port}
-
-auth.method = "token"
-auth.token = "${auth_token}"
-
-[[proxies]]
-name = "${proxy_name}"
-type = "http"
-localIP = "${LOCAL_HOST}"
-localPort = ${LOCAL_PORT}
-subdomain = "${subdomain}"
-EOF
-  chmod 600 "${FRPC_TOML}"
+  write_frpc_toml "${proxy_name}" "${subdomain}" "${server_addr}" "${server_port}" "${auth_token}"
   rm -f "${tmp}"
 
   log "Pairing OK – public_url=${public_url}"
@@ -123,25 +134,40 @@ set_ha_external_url() {
   fi
 
   log "Setze Home Assistant external_url …"
-  local tmp http_code
-  tmp="$(mktemp)"
-  http_code="$(curl -sS -o "${tmp}" -w '%{http_code}' \
-    -X POST "http://supervisor/core/api/config/core/update" \
-    -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$(jq -n --arg url "$url" '{external_url:$url}')" || true)"
-
-  if [[ "${http_code}" =~ ^2 ]]; then
-    log "external_url gesetzt"
-  else
-    log_err "external_url konnte nicht gesetzt werden (HTTP ${http_code}): $(cat "${tmp}" | redact)"
-    log "Bitte unter Einstellungen → System → Netzwerk manuell eintragen: ${url}"
+  # Core hat keinen REST-Endpunkt – nur WebSocket config/core/update
+  local out
+  if out="$(python3 /usr/bin/set-external-url.py "${url}" 2>&1)"; then
+    log "external_url gesetzt (${out})"
+    return 0
   fi
-  rm -f "${tmp}"
+  log "WebSocket-Update fehlgeschlagen: ${out}"
+
+  # Fallback: patch core.config (wirksam nach HA-Neustart)
+  local storage=""
+  for candidate in \
+    "/homeassistant/.storage/core.config" \
+    "/config/.storage/core.config"
+  do
+    if [[ -f "${candidate}" ]]; then
+      storage="${candidate}"
+      break
+    fi
+  done
+
+  if [[ -n "${storage}" ]]; then
+    if jq --arg url "$url" '.data.external_url = $url' "${storage}" > "${storage}.tmp" \
+      && mv "${storage}.tmp" "${storage}"; then
+      log "external_url in ${storage} geschrieben (Fallback)"
+      log "Home Assistant einmal neu starten, damit Companion die URL übernimmt."
+      return 0
+    fi
+  fi
+
+  log_err "external_url konnte nicht automatisch gesetzt werden"
+  log "Bitte unter Einstellungen → System → Netzwerk manuell eintragen: ${url}"
 }
 
 write_frpc_from_pair() {
-  # Refresh local host/port from current options into existing pair tunnel meta
   local proxy_name subdomain server_addr server_port auth_token public_url
   proxy_name="$(jq -r '.tunnel.proxy_name' "${PAIR_FILE}")"
   subdomain="$(jq -r '.tunnel.subdomain' "${PAIR_FILE}")"
@@ -150,21 +176,7 @@ write_frpc_from_pair() {
   auth_token="$(jq -r '.tunnel.auth_token' "${PAIR_FILE}")"
   public_url="$(jq -r '.public_url' "${PAIR_FILE}")"
 
-  cat > "${FRPC_TOML}" <<EOF
-serverAddr = "${server_addr}"
-serverPort = ${server_port}
-
-auth.method = "token"
-auth.token = "${auth_token}"
-
-[[proxies]]
-name = "${proxy_name}"
-type = "http"
-localIP = "${LOCAL_HOST}"
-localPort = ${LOCAL_PORT}
-subdomain = "${subdomain}"
-EOF
-  chmod 600 "${FRPC_TOML}"
+  write_frpc_toml "${proxy_name}" "${subdomain}" "${server_addr}" "${server_port}" "${auth_token}"
   echo "${public_url}"
 }
 
@@ -192,7 +204,6 @@ heartbeat_loop() {
       log_err "Device-Token ungültig – bitte neu pairen (reset_pairing)"
       write_status "needs_pairing" "Token ungültig"
       rm -f "${tmp}"
-      # Stop frpc by exiting main later – signal via file
       touch "${DATA_DIR}/repair_required"
       return 1
     else
@@ -205,7 +216,6 @@ heartbeat_loop() {
 }
 
 run_frpc_supervised() {
-  # Restart frpc forever (auto-reconnect / crash recovery)
   while true; do
     if [[ -f "${DATA_DIR}/repair_required" ]]; then
       log_err "Re-Pair erforderlich – frpc gestoppt"
@@ -213,7 +223,6 @@ run_frpc_supervised() {
     fi
     log "Starte frpc …"
     write_status "connecting" "frpc startet" "$(jq -r '.public_url // empty' "${PAIR_FILE}" 2>/dev/null || true)"
-    # Do not log full config (contains token)
     if ! /usr/local/bin/frpc -c "${FRPC_TOML}"; then
       log_err "frpc beendet – Neustart in 5s"
       write_status "reconnecting" "frpc Neustart"
@@ -245,11 +254,9 @@ main() {
   public_url="$(jq -r '.public_url' "${PAIR_FILE}")"
   set_ha_external_url "${public_url}"
 
-  # Heartbeat in background
   heartbeat_loop &
   HEARTBEAT_PID=$!
 
-  # frpc in foreground loop (keeps add-on alive)
   set +e
   run_frpc_supervised
   FRPC_RC=$?

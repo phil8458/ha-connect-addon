@@ -1,5 +1,5 @@
 name: "HA Remote"
-version: "0.2.2"
+version: "0.2.3"
 slug: ha_remote
 description: >-
   Remote-Zugang zu Home Assistant ohne Portfreigabe.
@@ -33,5 +33,7 @@ schema:
   heartbeat_interval: int(10,300)
   set_external_url: bool
   reset_pairing: bool
-map: []
+map:
+  - type: homeassistant_config
+    read_only: false
 services: []

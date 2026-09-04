@@ -9,7 +9,13 @@
    - `api_base` = `https://haremote.projex.ch`
    - `pairing_code` = dein 6-stelliger Code
 5. Speichern, dann die App **starten**.
-6. Unter **Protokoll** den Status prüfen (`online`).
+6. Unter **Protokoll** den Status prüfen (`online` / `start proxy success`).
+
+Keine `configuration.yaml`-Anpassung nötig.
+
+Falls die Companion-App von unterwegs noch die lokale URL nutzt:
+**Einstellungen → System → Netzwerk → Internet** auf
+`https://DEIN-SLUG.haremote.projex.ch` prüfen (wird meist automatisch gesetzt).
 
 ## Optionen
 
