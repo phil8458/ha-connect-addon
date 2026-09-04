@@ -7,7 +7,7 @@ TOKEN_FILE="${DATA_DIR}/device_token"
 PAIR_FILE="${DATA_DIR}/pair.json"
 FRPC_TOML="${DATA_DIR}/frpc.toml"
 STATUS_FILE="${DATA_DIR}/status.json"
-ADDON_VERSION="0.2.3"
+ADDON_VERSION="0.2.4"
 
 log() {
   echo "[ha-remote] $*"
@@ -71,8 +71,6 @@ type = "http"
 localIP = "${LOCAL_HOST}"
 localPort = ${LOCAL_PORT}
 subdomain = "${subdomain}"
-# Avoid HA 400 Bad Request without trusted_proxies in configuration.yaml
-requestHeaders.remove = ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host", "X-Real-IP", "Forwarded"]
 EOF
   chmod 600 "${FRPC_TOML}"
 }
