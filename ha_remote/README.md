@@ -1,14 +1,17 @@
-# HA Remote – Home Assistant Add-on
+# HA Remote
 
-Installiere dieses Verzeichnis als **lokales Add-on-Repository** in Home Assistant
-(Einstellungen → Add-ons → Add-on-Store → ⋮ → Repository) und wähle den Ordner
-`addons` dieses Repos bzw. die Git-URL, die auf `addons/` zeigt.
+Remote-Zugang zu Home Assistant **ohne Portfreigabe**.
 
-Lokale Entwicklung (Supervisor „Local add-ons“):
+## Einrichtung
 
-1. Repo nach `/addons` auf dem HA-Host kopieren oder als Git-Repo einbinden:
-   - Repository-URL = Root dieses Projekts, Add-on liegt unter `addons/ha_remote`
-2. Oder: Inhalt von `addons/ha_remote` nach `/addons/ha_remote` auf dem HA-Host legen
-   und `repository.yaml` nach `/addons/repository.yaml`
+1. Auf https://haremote.projex.ch Account anlegen und Instanz erstellen
+2. **Pairing-Code** erzeugen (6-stellig, 5 Minuten gültig)
+3. In diesem Add-on den Tab **Konfiguration** öffnen
+4. Eintragen:
+   - **API-Basis-URL:** `https://haremote.projex.ch`
+   - **Pairing-Code:** den 6-stelligen Code
+5. **Speichern** → zurück zu Info → **Starten**
+6. Im Tab **Protokoll** sollte `Pairing OK` / `online` erscheinen
 
-Siehe `DOCS.md` für Nutzer-Anleitung und `docs/PHASE3.md` im Repo-Root.
+Nach dem ersten erfolgreichen Pairing kannst du den Pairing-Code wieder leeren.
+Das Token bleibt gespeichert.
