@@ -1,16 +1,16 @@
-name: "HA Remote"
-version: "0.2.5"
-slug: ha_remote
+name: "HA Connect"
+version: "0.3.0"
+slug: ha_connect
 description: >-
   Remote-Zugang zu Home Assistant ohne Portfreigabe.
-  Pairing-Code vom HA-Remote-Dashboard eingeben – fertig.
-url: "https://github.com/phil8458/ha-remote-addon"
+  Pairing-Code vom HA-Connect-Dashboard eingeben – fertig.
+url: "https://github.com/phil8458/ha-connect-addon"
 arch:
   - amd64
   - aarch64
   - armv7
 # Prebuilt multi-arch image – Pi muss nicht lokal bauen
-image: "ghcr.io/phil8458/ha-remote-addon"
+image: "ghcr.io/phil8458/ha-connect-addon"
 init: false
 startup: services
 boot: auto
@@ -18,7 +18,7 @@ homeassistant_api: true
 hassio_api: true
 apparmor: true
 options:
-  api_base: "https://haremote.projex.ch"
+  api_base: "https://ha-connect.com"
   pairing_code: ""
   local_host: "homeassistant"
   local_port: 8123

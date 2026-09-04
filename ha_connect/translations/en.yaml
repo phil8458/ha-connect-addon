@@ -1,10 +1,10 @@
 configuration:
   api_base:
     name: API base URL
-    description: Base URL of your HA Remote cloud (no trailing slash).
+    description: Base URL of your HA Connect cloud (no trailing slash).
   pairing_code:
     name: Pairing code
-    description: 6-digit code from the HA Remote dashboard. Leave empty after first pair.
+    description: 6-digit code from the HA Connect dashboard. Leave empty after first pair.
   local_host:
     name: Local Home Assistant host
     description: Hostname or IP of Home Assistant as seen from this add-on (usually homeassistant).

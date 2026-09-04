@@ -1,9 +1,9 @@
-# HA Remote – Home Assistant App (Add-on)
+# HA Connect – Home Assistant App (Add-on)
 
 Öffentliches Repository für den Home-Assistant-App-Store.
 
 Cloud/API-Code liegt **nicht** hier (privates Repo).  
-Live-API: https://haremote.projex.ch
+Live-API: https://ha-connect.com
 
 ## Installation in Home Assistant
 
@@ -12,22 +12,22 @@ Live-API: https://haremote.projex.ch
 3. URL hinzufügen:
 
    ```text
-   https://github.com/phil8458/ha-remote-addon
+   https://github.com/phil8458/ha-connect-addon
    ```
 
-4. App **HA Remote** installieren (lädt vorgebautes Image von GHCR – kein lokaler Build auf dem Pi)
+4. App **HA Connect** installieren (lädt vorgebautes Image von GHCR – kein lokaler Build auf dem Pi)
 5. Optionen:
-   - `api_base`: `https://haremote.projex.ch`
-   - `pairing_code`: Code aus dem Dashboard (https://haremote.projex.ch)
+   - `api_base`: `https://ha-connect.com`
+   - `pairing_code`: Code aus dem Dashboard (https://ha-connect.com)
 6. Starten und Logs prüfen
 
-Image: `ghcr.io/phil8458/ha-remote-addon` (amd64 / arm64 / armv7)
+Image: `ghcr.io/phil8458/ha-connect-addon` (amd64 / arm64 / armv7)
 
 ## Struktur
 
 ```
 repository.yaml
-ha_remote/
+ha_connect/
   config.yaml
   Dockerfile
   DOCS.md

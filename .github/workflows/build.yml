@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/phil8458/ha-remote-addon
+  IMAGE: ghcr.io/phil8458/ha-connect-addon
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
       - name: Read add-on version
         id: meta
         run: |
-          VERSION=$(grep -E '^version:' ha_remote/config.yaml | sed 's/.*"\(.*\)".*/\1/')
+          VERSION=$(grep -E '^version:' ha_connect/config.yaml | sed 's/.*"\(.*\)".*/\1/')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Building ${{ env.IMAGE }}:${VERSION}"
 
@@ -42,8 +42,8 @@ jobs:
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v6
         with:
-          context: ./ha_remote
-          file: ./ha_remote/Dockerfile
+          context: ./ha_connect
+          file: ./ha_connect/Dockerfile
           # alpine supports amd64 / arm64 / armv7 (HA base:latest dropped armv7)
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
@@ -61,11 +61,11 @@ jobs:
           gh api \
             --method PUT \
             -H "Accept: application/vnd.github+json" \
-            "/user/packages/container/ha-remote-addon/visibility" \
+            "/user/packages/container/ha-connect-addon/visibility" \
             -f visibility=public \
           || gh api \
             --method PUT \
             -H "Accept: application/vnd.github+json" \
-            "/orgs/phil8458/packages/container/ha-remote-addon/visibility" \
+            "/orgs/phil8458/packages/container/ha-connect-addon/visibility" \
             -f visibility=public \
-          || echo "Bitte Package manuell auf Public setzen: GitHub → Packages → ha-remote-addon → Package settings → Change visibility"
+          || echo "Bitte Package manuell auf Public setzen: GitHub → Packages → ha-connect-addon → Package settings → Change visibility"

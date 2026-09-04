@@ -22,6 +22,6 @@ RUN set -eux; \
     mkdir -p /tmp
 
 COPY rootfs /
-RUN chmod +x /usr/bin/ha-remote.sh /usr/bin/set-external-url.py
+RUN chmod +x /usr/bin/ha-connect.sh /usr/bin/set-external-url.py
 
-CMD ["/usr/bin/ha-remote.sh"]
+CMD ["/usr/bin/ha-connect.sh"]

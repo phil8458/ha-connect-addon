@@ -7,17 +7,17 @@ TOKEN_FILE="${DATA_DIR}/device_token"
 PAIR_FILE="${DATA_DIR}/pair.json"
 FRPC_TOML="${DATA_DIR}/frpc.toml"
 STATUS_FILE="${DATA_DIR}/status.json"
-ADDON_VERSION="0.2.5"
+ADDON_VERSION="0.3.0"
 STRIP_PROXY_PORT=18123
-NGINX_CONF="/etc/ha-remote/nginx.conf"
+NGINX_CONF="/etc/ha-connect/nginx.conf"
 NGINX_UPSTREAM="${DATA_DIR}/nginx-upstream.conf"
 
 log() {
-  echo "[ha-remote] $*"
+  echo "[ha-connect] $*"
 }
 
 log_err() {
-  echo "[ha-remote] ERROR: $*" >&2
+  echo "[ha-connect] ERROR: $*" >&2
 }
 
 redact() {
@@ -32,7 +32,7 @@ read_options() {
     log_err "options.json missing at ${OPTIONS_FILE}"
     exit 1
   fi
-  API_BASE="$(jq -r '.api_base // "https://haremote.projex.ch"' "${OPTIONS_FILE}" | sed 's:/*$::')"
+  API_BASE="$(jq -r '.api_base // "https://ha-connect.com"' "${OPTIONS_FILE}" | sed 's:/*$::')"
   PAIRING_CODE="$(jq -r '.pairing_code // empty' "${OPTIONS_FILE}")"
   LOCAL_HOST="$(jq -r '.local_host // "homeassistant"' "${OPTIONS_FILE}")"
   LOCAL_PORT="$(jq -r '.local_port // 8123' "${OPTIONS_FILE}")"
@@ -85,14 +85,14 @@ start_strip_proxy() {
   cat > "${NGINX_UPSTREAM}" <<EOF
 proxy_pass http://${LOCAL_HOST}:${LOCAL_PORT};
 EOF
-  if [[ -f /tmp/ha-remote-nginx.pid ]]; then
-    kill "$(cat /tmp/ha-remote-nginx.pid)" 2>/dev/null || true
-    rm -f /tmp/ha-remote-nginx.pid
+  if [[ -f /tmp/ha-connect-nginx.pid ]]; then
+    kill "$(cat /tmp/ha-connect-nginx.pid)" 2>/dev/null || true
+    rm -f /tmp/ha-connect-nginx.pid
     sleep 0.2
   fi
-  log "Starte Header-Strip-Proxy → ${LOCAL_HOST}:${LOCAL_PORT}"
+  log "Starte Header-Strip-Proxy â†’ ${LOCAL_HOST}:${LOCAL_PORT}"
   if ! nginx -t -c "${NGINX_CONF}"; then
-    log_err "nginx-Konfiguration ungültig"
+    log_err "nginx-Konfiguration ungÃ¼ltig"
     exit 1
   fi
   nginx -c "${NGINX_CONF}"
@@ -106,8 +106,8 @@ do_pair() {
     exit 1
   fi
 
-  log "Pairing mit ${API_BASE} …"
-  write_status "pairing" "Verbinde mit HA Remote"
+  log "Pairing mit ${API_BASE} â€¦"
+  write_status "pairing" "Verbinde mit HA Connect"
 
   local tmp
   tmp="$(mktemp)"
@@ -139,7 +139,7 @@ do_pair() {
   write_frpc_toml "${proxy_name}" "${subdomain}" "${server_addr}" "${server_port}" "${auth_token}"
   rm -f "${tmp}"
 
-  log "Pairing OK – public_url=${public_url}"
+  log "Pairing OK â€“ public_url=${public_url}"
   write_status "paired" "Pairing erfolgreich" "${public_url}"
 }
 
@@ -150,12 +150,12 @@ set_ha_external_url() {
     return 0
   fi
   if [[ -z "${SUPERVISOR_TOKEN:-}" ]]; then
-    log "SUPERVISOR_TOKEN fehlt – externe URL bitte manuell setzen: ${url}"
+    log "SUPERVISOR_TOKEN fehlt â€“ externe URL bitte manuell setzen: ${url}"
     return 0
   fi
 
-  log "Setze Home Assistant external_url …"
-  # Core hat keinen REST-Endpunkt – nur WebSocket config/core/update
+  log "Setze Home Assistant external_url â€¦"
+  # Core hat keinen REST-Endpunkt â€“ nur WebSocket config/core/update
   local out
   if out="$(python3 /usr/bin/set-external-url.py "${url}" 2>&1)"; then
     log "external_url gesetzt (${out})"
@@ -179,13 +179,13 @@ set_ha_external_url() {
     if jq --arg url "$url" '.data.external_url = $url' "${storage}" > "${storage}.tmp" \
       && mv "${storage}.tmp" "${storage}"; then
       log "external_url in ${storage} geschrieben (Fallback)"
-      log "Home Assistant einmal neu starten, damit Companion die URL übernimmt."
+      log "Home Assistant einmal neu starten, damit Companion die URL Ã¼bernimmt."
       return 0
     fi
   fi
 
   log_err "external_url konnte nicht automatisch gesetzt werden"
-  log "Bitte unter Einstellungen → System → Netzwerk manuell eintragen: ${url}"
+  log "Bitte unter Einstellungen â†’ System â†’ Netzwerk manuell eintragen: ${url}"
 }
 
 write_frpc_from_pair() {
@@ -222,8 +222,8 @@ heartbeat_loop() {
       public_url="$(jq -r '.public_url // empty' "${tmp}")"
       write_status "online" "Tunnel verbunden" "${public_url}"
     elif [[ "${http_code}" == "401" ]]; then
-      log_err "Device-Token ungültig – bitte neu pairen (reset_pairing)"
-      write_status "needs_pairing" "Token ungültig"
+      log_err "Device-Token ungÃ¼ltig â€“ bitte neu pairen (reset_pairing)"
+      write_status "needs_pairing" "Token ungÃ¼ltig"
       rm -f "${tmp}"
       touch "${DATA_DIR}/repair_required"
       return 1
@@ -239,17 +239,17 @@ heartbeat_loop() {
 run_frpc_supervised() {
   while true; do
     if [[ -f "${DATA_DIR}/repair_required" ]]; then
-      log_err "Re-Pair erforderlich – frpc gestoppt"
+      log_err "Re-Pair erforderlich â€“ frpc gestoppt"
       return 1
     fi
-    log "Starte frpc …"
+    log "Starte frpc â€¦"
     write_status "connecting" "frpc startet" "$(jq -r '.public_url // empty' "${PAIR_FILE}" 2>/dev/null || true)"
     if ! /usr/local/bin/frpc -c "${FRPC_TOML}"; then
-      log_err "frpc beendet – Neustart in 5s"
+      log_err "frpc beendet â€“ Neustart in 5s"
       write_status "reconnecting" "frpc Neustart"
       sleep 5
     else
-      log "frpc sauber beendet – Neustart in 5s"
+      log "frpc sauber beendet â€“ Neustart in 5s"
       sleep 5
     fi
   done
@@ -260,7 +260,7 @@ main() {
   read_options
 
   if [[ "${RESET_PAIRING}" == "true" ]]; then
-    log "reset_pairing=true – lösche gespeicherte Credentials"
+    log "reset_pairing=true â€“ lÃ¶sche gespeicherte Credentials"
     rm -f "${TOKEN_FILE}" "${PAIR_FILE}" "${FRPC_TOML}" "${DATA_DIR}/repair_required"
   fi
 
@@ -286,8 +286,8 @@ main() {
 
   kill "${HEARTBEAT_PID}" 2>/dev/null || true
   wait "${HEARTBEAT_PID}" 2>/dev/null || true
-  if [[ -f /tmp/ha-remote-nginx.pid ]]; then
-    kill "$(cat /tmp/ha-remote-nginx.pid)" 2>/dev/null || true
+  if [[ -f /tmp/ha-connect-nginx.pid ]]; then
+    kill "$(cat /tmp/ha-connect-nginx.pid)" 2>/dev/null || true
   fi
   exit "${FRPC_RC}"
 }
