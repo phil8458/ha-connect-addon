@@ -1,0 +1,22 @@
+configuration:
+  api_base:
+    name: API base URL
+    description: Base URL of your HA Remote cloud (no trailing slash).
+  pairing_code:
+    name: Pairing code
+    description: 6-digit code from the HA Remote dashboard. Leave empty after first pair.
+  local_host:
+    name: Local Home Assistant host
+    description: Hostname or IP of Home Assistant as seen from this add-on (usually homeassistant).
+  local_port:
+    name: Local port
+    description: Home Assistant HTTP port (default 8123).
+  heartbeat_interval:
+    name: Heartbeat interval
+    description: Seconds between heartbeats to the cloud.
+  set_external_url:
+    name: Set external URL
+    description: Automatically set Home Assistant external URL after pairing.
+  reset_pairing:
+    name: Reset pairing
+    description: Delete stored device token and pair again on next start.

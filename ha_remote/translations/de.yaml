@@ -1,0 +1,22 @@
+configuration:
+  api_base:
+    name: API-Basis-URL
+    description: Basis-URL deiner HA-Remote-Cloud (ohne Slash am Ende).
+  pairing_code:
+    name: Pairing-Code
+    description: 6-stelliger Code aus dem HA-Remote-Dashboard. Nach dem ersten Pair leer lassen.
+  local_host:
+    name: Lokaler Home-Assistant-Host
+    description: Hostname/IP von Home Assistant aus Sicht des Add-ons (meist homeassistant).
+  local_port:
+    name: Lokaler Port
+    description: HTTP-Port von Home Assistant (Standard 8123).
+  heartbeat_interval:
+    name: Heartbeat-Intervall
+    description: Sekunden zwischen Heartbeats zur Cloud.
+  set_external_url:
+    name: Externe URL setzen
+    description: Externe Home-Assistant-URL nach dem Pairing automatisch setzen.
+  reset_pairing:
+    name: Pairing zurücksetzen
+    description: Gespeichertes Device-Token löschen und beim nächsten Start neu pairen.

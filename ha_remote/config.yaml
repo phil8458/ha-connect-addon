@@ -1,0 +1,35 @@
+name: "HA Remote"
+version: "0.1.0"
+slug: ha_remote
+description: >-
+  Remote-Zugang zu Home Assistant ohne Portfreigabe.
+  Pairing-Code vom HA-Remote-Dashboard eingeben – fertig.
+url: "https://github.com/phil8458/ha-remote-addon"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+init: false
+startup: services
+boot: auto
+homeassistant_api: true
+hassio_api: true
+apparmor: true
+options:
+  api_base: "https://haremote.projex.ch"
+  pairing_code: ""
+  local_host: "homeassistant"
+  local_port: 8123
+  heartbeat_interval: 30
+  set_external_url: true
+  reset_pairing: false
+schema:
+  api_base: str
+  pairing_code: str?
+  local_host: str
+  local_port: int(1,65535)
+  heartbeat_interval: int(10,300)
+  set_external_url: bool
+  reset_pairing: bool
+map: []
+services: []
