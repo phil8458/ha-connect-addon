@@ -1,4 +1,4 @@
-FROM ghcr.io/home-assistant/base:latest
+FROM alpine:3.21
 
 # Set by BuildKit per platform (amd64 | arm64 | arm)
 ARG TARGETARCH
@@ -11,7 +11,7 @@ RUN set -eux; \
       arm) FRP_ARCH=arm ;; \
       *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
-    apk add --no-cache curl jq bash; \
+    apk add --no-cache curl jq bash ca-certificates tzdata; \
     curl -fsSL \
       "https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/frp_${FRP_VERSION}_linux_${FRP_ARCH}.tar.gz" \
       -o /tmp/frp.tar.gz; \

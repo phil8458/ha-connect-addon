@@ -44,6 +44,7 @@ jobs:
         with:
           context: ./ha_remote
           file: ./ha_remote/Dockerfile
+          # alpine supports amd64 / arm64 / armv7 (HA base:latest dropped armv7)
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: |
