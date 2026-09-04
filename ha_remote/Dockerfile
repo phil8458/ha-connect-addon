@@ -11,14 +11,15 @@ RUN set -eux; \
       arm) FRP_ARCH=arm ;; \
       *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
-    apk add --no-cache curl jq bash python3 ca-certificates tzdata; \
+    apk add --no-cache curl jq bash python3 nginx ca-certificates tzdata; \
     curl -fsSL \
       "https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/frp_${FRP_VERSION}_linux_${FRP_ARCH}.tar.gz" \
       -o /tmp/frp.tar.gz; \
     tar -xzf /tmp/frp.tar.gz -C /tmp; \
     mv "/tmp/frp_${FRP_VERSION}_linux_${FRP_ARCH}/frpc" /usr/local/bin/frpc; \
     chmod +x /usr/local/bin/frpc; \
-    rm -rf /tmp/frp*
+    rm -rf /tmp/frp* /etc/nginx/http.d /etc/nginx/conf.d; \
+    mkdir -p /tmp
 
 COPY rootfs /
 RUN chmod +x /usr/bin/ha-remote.sh /usr/bin/set-external-url.py

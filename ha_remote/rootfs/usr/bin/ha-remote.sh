@@ -7,7 +7,10 @@ TOKEN_FILE="${DATA_DIR}/device_token"
 PAIR_FILE="${DATA_DIR}/pair.json"
 FRPC_TOML="${DATA_DIR}/frpc.toml"
 STATUS_FILE="${DATA_DIR}/status.json"
-ADDON_VERSION="0.2.4"
+ADDON_VERSION="0.2.5"
+STRIP_PROXY_PORT=18123
+NGINX_CONF="/etc/ha-remote/nginx.conf"
+NGINX_UPSTREAM="${DATA_DIR}/nginx-upstream.conf"
 
 log() {
   echo "[ha-remote] $*"
@@ -58,6 +61,8 @@ write_frpc_toml() {
   local server_port="$4"
   local auth_token="$5"
 
+  # Point frpc at local nginx strip-proxy (not HA directly).
+  # frp always injects X-Forwarded-For; HA returns 400 without trusted_proxies.
   cat > "${FRPC_TOML}" <<EOF
 serverAddr = "${server_addr}"
 serverPort = ${server_port}
@@ -68,11 +73,29 @@ auth.token = "${auth_token}"
 [[proxies]]
 name = "${proxy_name}"
 type = "http"
-localIP = "${LOCAL_HOST}"
-localPort = ${LOCAL_PORT}
+localIP = "127.0.0.1"
+localPort = ${STRIP_PROXY_PORT}
 subdomain = "${subdomain}"
 EOF
   chmod 600 "${FRPC_TOML}"
+}
+
+start_strip_proxy() {
+  mkdir -p /tmp/nginx-client-body /tmp/nginx-proxy /tmp/nginx-fastcgi /tmp/nginx-uwsgi /tmp/nginx-scgi
+  cat > "${NGINX_UPSTREAM}" <<EOF
+proxy_pass http://${LOCAL_HOST}:${LOCAL_PORT};
+EOF
+  if [[ -f /tmp/ha-remote-nginx.pid ]]; then
+    kill "$(cat /tmp/ha-remote-nginx.pid)" 2>/dev/null || true
+    rm -f /tmp/ha-remote-nginx.pid
+    sleep 0.2
+  fi
+  log "Starte Header-Strip-Proxy → ${LOCAL_HOST}:${LOCAL_PORT}"
+  if ! nginx -t -c "${NGINX_CONF}"; then
+    log_err "nginx-Konfiguration ungültig"
+    exit 1
+  fi
+  nginx -c "${NGINX_CONF}"
 }
 
 do_pair() {
@@ -251,6 +274,7 @@ main() {
   local public_url
   public_url="$(jq -r '.public_url' "${PAIR_FILE}")"
   set_ha_external_url "${public_url}"
+  start_strip_proxy
 
   heartbeat_loop &
   HEARTBEAT_PID=$!
@@ -262,6 +286,9 @@ main() {
 
   kill "${HEARTBEAT_PID}" 2>/dev/null || true
   wait "${HEARTBEAT_PID}" 2>/dev/null || true
+  if [[ -f /tmp/ha-remote-nginx.pid ]]; then
+    kill "$(cat /tmp/ha-remote-nginx.pid)" 2>/dev/null || true
+  fi
   exit "${FRPC_RC}"
 }
 
