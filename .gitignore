@@ -6,3 +6,6 @@ Thumbs.db
 
 # Build leftovers
 *.log
+apibody.txt
+authbody.txt
+body.txt
